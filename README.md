@@ -2,20 +2,6 @@
 
 > **Assignment**: Generate synthetic data via simulation, then train and compare ML models on it.
 
----
-
-## Table of Contents
-1. [Overview](#overview)
-2. [Simulation Tool: SimPy](#simulation-tool-simpy)
-3. [M/M/c Queue Model](#mmc-queue-model)
-4. [Parameters & Bounds](#parameters--bounds)
-5. [Methodology](#methodology)
-6. [Results Table](#results-table)
-7. [Result Graphs](#result-graphs)
-8. [Conclusion](#conclusion)
-9. [How to Run](#how-to-run)
-
----
 
 ## Overview
 
