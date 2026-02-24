@@ -51,57 +51,6 @@ SimPy is a process-based discrete-event simulation library. It allows you to mod
 
 ---
 
-## M/M/c Queue Model
-
-The **M/M/c queue** (also called Erlang-C model) is one of the fundamental models in queueing theory:
-
-```
-Customers → [Arrival Process] → [Queue] → [c Servers] → Departure
-                Poisson              FIFO    Exponential
-                                            Service Times
-```
-
-- **First M**: Markovian (Poisson) arrivals — exponential inter-arrival times
-- **Second M**: Markovian service — exponential service durations
-- **c**: Number of parallel servers
-
-**System stability condition**: `ρ = λ/(c·μ) < 1`  
-(arrival rate must be less than total service capacity)
-
-### Theoretical Predictions
-- As traffic intensity ρ → 1, wait times grow **exponentially** (non-linear)
-- Adding more servers dramatically reduces wait times near saturation
-- This non-linearity makes it a great test case for ML — linear models will struggle
-
----
-
-## Parameters & Bounds
-
-### Input Parameters (Features)
-
-| Parameter | Symbol | Lower Bound | Upper Bound | Type | Description |
-|-----------|--------|-------------|-------------|------|-------------|
-| `arrival_rate` | λ | **0.5** | **4.0** | Float | Customers arriving per time unit |
-| `service_rate` | μ | **1.0** | **5.0** | Float | Services completed per server per time unit |
-| `num_servers` | c | **1** | **5** | Integer | Number of parallel servers |
-| `traffic_intensity` | ρ | derived | derived | Float | λ / (c·μ) — system load |
-
-**Rationale for bounds:**
-- `arrival_rate` ≥ 0.5: Need enough arrivals to gather reliable statistics in 500 time units
-- `service_rate` ≥ 1.0: Prevents servers from being infinitely slow
-- `num_servers` 1–5: Covers single-counter to small call-center scale
-- Upper bounds set to allow a diverse mix of stable (ρ < 1) and overloaded (ρ ≥ 1) systems
-
-### Output Variables (Simulation Records)
-
-| Variable | Description | Used As |
-|----------|-------------|---------|
-| `avg_wait_time` | Mean time in queue before service | **ML Target** |
-| `avg_queue_length` | Mean number waiting in queue | Feature / Analysis |
-| `throughput` | Customers served per time unit | Analysis |
-| `utilization` | Server capacity utilization fraction | Analysis |
-
----
 
 ## Methodology
 
@@ -181,87 +130,12 @@ df = pd.DataFrame(records)  # Shape: (1000, 8)
 
 **Bold** = Best value in each metric column.
 
-### Metric Explanations
-
-- **RMSE** (Root Mean Squared Error): Penalizes large errors more heavily. Lower is better.
-- **MAE** (Mean Absolute Error): Average of absolute prediction errors. Lower is better. More robust to outliers than RMSE.
-- **R²** (Coefficient of Determination): Proportion of variance in wait time explained by the model. 1.0 = perfect, 0.0 = mean-only baseline.
-- **CV R²**: 5-fold cross-validated R². Measures generalization — how well the model performs on unseen data folds.
-
 ---
 
 ## Result Graphs
 
 ### Dashboard Overview
 ![Results Dashboard](results_dashboard.png)
-
-The dashboard contains 9 panels:
-
-| Panel | Description |
-|-------|-------------|
-| Top-Left | **R² bar chart** — all models ranked. Random Forest leads. |
-| Top-Center | **RMSE bar chart** — error magnitude. Linear models worst. |
-| Top-Right | **CV R² with error bars** — stability across folds. MLP most consistent. |
-| Mid-Left | **Best model (RF) — Actual vs Predicted** — tight scatter near diagonal shows excellent fit |
-| Mid-Center | **Worst model (Linear) — Actual vs Predicted** — scatter off diagonal shows poor non-linear capture |
-| Mid-Right | **Random Forest feature importances** — `traffic_intensity` dominates |
-| Bottom-Left | **Simulation scatter**: Arrival rate vs wait time, colored by servers |
-| Bottom-Center | **Traffic intensity vs wait time** — dramatic non-linear rise at ρ → 1 |
-| Bottom-Right | **Correlation heatmap** — strong correlation between ρ and wait time |
-
-### Key Observations from Graphs
-
-1. **Non-linearity is visible**: The traffic intensity vs wait time plot shows an exponential curve — linear models cannot capture this
-2. **Traffic intensity dominates**: RF feature importance confirms ρ is the most important predictor
-3. **Random Forest predictions cluster tightly** on the diagonal — R² = 0.9895
-4. **Linear model predictions** fan out significantly, especially at high wait times
-
----
-
-## Conclusion
-
-### Best Model: Random Forest Regressor
-
-| Why Random Forest wins |
-|------------------------|
-| Captures **non-linear** queueing dynamics naturally |
-| Robust to outliers (high wait times at ρ → 1) |
-| No feature scaling required |
-| Low variance: CV R² std = 0.0117 (stable across folds) |
-| Best test R² = **0.9895** and best MAE = **0.5114** |
-
-### Key Takeaways
-
-1. **Tree-based ensemble models** (RF, GBM, ET) dramatically outperform linear models for this task because queue wait times follow a non-linear relationship with input parameters
-2. **Traffic intensity** (ρ) is the most important feature — it encodes the fundamental stability of the queuing system
-3. **Simulation + ML** provides a powerful framework: once trained, the ML model can predict outcomes in microseconds rather than running full simulations
-4. **Linear models** achieve only R² ≈ 0.80 — they systematically under-predict high wait times near system saturation
-5. **MLP Neural Network** achieves the most stable CV performance (std=0.0090), making it a strong alternative to Random Forest
-
----
-
-## How to Run
-
-### Option 1: Google Colab (Recommended)
-
-1. Open [Google Colab](https://colab.research.google.com)
-2. Upload `SimPy_ML_Assignment.ipynb`
-3. Click **Runtime → Run All**
-4. All packages install automatically via `!pip install simpy`
-
-### Option 2: Local
-
-```bash
-# Clone repository
-git clone <your-github-repo-url>
-cd <repo-folder>
-
-# Install dependencies
-pip install simpy numpy pandas matplotlib seaborn scikit-learn
-
-# Launch notebook
-jupyter notebook SimPy_ML_Assignment.ipynb
-```
 
 ### Dependencies
 
